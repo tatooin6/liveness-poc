@@ -1,5 +1,7 @@
 # Dependencies
 node_modules/
+js/
+model/
 
 # Build output
 /dist/
