@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FacePlugin Liveness Demo</title>
+   <link rel="stylesheet" href="./styles/main.css">
+</head>
+<body>
+  <main class="demo-container">
+    <h1>Face Liveness Detection (Browser Demo)</h1>
+    <p>
+      Click start, grant camera access, and keep your face centered. The canvas will highlight detected faces and show the live probability computed by
+      <strong>basic-liveness.js</strong>.
+    </p>
+
+    <div class="controls">
+      <div class="control-buttons">
+        <button id="start-liveness" onclick="startLivenessFromButton(event)">Start Liveness Detection</button>
+        <button id="log-test" onclick="logTestClick()">Log</button>
+      </div>
+      <div id="live-status" class="status">Click start to begin. Click log to test.</div>
+    </div>
+
+    <div class="grid">
+      <section>
+        <h3>Camera Feed</h3>
+        <video id="live-video" autoplay muted playsinline></video>
+      </section>
+      <section>
+        <h3>Processed Frame</h3>
+        <canvas id="live-canvas"></canvas>
+      </section>
+    </div>
+
+    <section>
+      <p class="tip">Demo Tips</p>
+      <ol>
+        <li>Ensure adequate lighting; the detector prefers even illumination.</li>
+        <li>Stay within ~1 meter of the webcam for higher confidence scores.</li>
+        <li>Watch the status banner for real-time results (“Live” vs “Spoof”).</li>
+      </ol>
+    </section>
+  </main>
+
+  <script src="../node_modules/faceplugin-face-recognition-js/dist/facerecognition-sdk.js"></script>
+  <script src="./scripts/basic-liveness.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "build:sdk": "node scripts/build-faceplugin-sdk.js",
+    "start:dev": "npx http-server . -p 4173"
+  },
+  "dependencies": {
+    "faceplugin-face-recognition-js": "^0.0.1"
+  }
+}
