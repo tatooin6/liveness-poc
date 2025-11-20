@@ -4,6 +4,11 @@ const REQUIRED_EXPORTS = [
   "detectFaceBase64",
   "loadLivenessModel",
   "predictLiveness",
+  "loadLandmarkModel",
+  "predictLandmarkBase64",
+  "loadFeatureModel",
+  "extractFeatureBase64",
+  "matchFeature",
   "load_opencv",
 ];
 

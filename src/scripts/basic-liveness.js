@@ -2,6 +2,7 @@ import { FEATURE_FLAGS } from "./config/app-config.js";
 import { createLiveLivenessController } from "./features/live-liveness.js";
 import { registerDocumentUploadFeature } from "./features/document-processing.js";
 import { registerFaceComparisonFeature } from "./features/face-comparison.js";
+import { registerLivePhotoCapture } from "./features/live-photo-capture.js";
 
 const controller = createLiveLivenessController();
 
@@ -16,9 +17,13 @@ function boot() {
     });
   }
   if (FEATURE_FLAGS.enableFaceComparison) {
+    registerLivePhotoCapture({
+      buttonId: "capture",
+      previewImageId: "picture-preview",
+      statusId: "comparison-status",
+    });
     registerFaceComparisonFeature({
-      referenceInputId: "reference-face-upload",
-      liveCaptureButtonId: "compare-live-face",
+      compareButtonId: "compare-live-face",
       statusId: "comparison-status",
     });
   }
@@ -29,7 +34,6 @@ window.basicLivenessDemo = {
   stop: () => controller.stop(),
 };
 window.startLivenessFromButton = (event) => controller.startFromButton(event);
-window.logTestClick = () => console.log("[liveness-demo] Log button clicked.");
 window.addEventListener("beforeunload", () => controller.stop());
 
 if (document.readyState === "loading") {

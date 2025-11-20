@@ -22,9 +22,9 @@
       <div class="controls">
         <div class="control-buttons">
           <button id="start-liveness" onclick="startLivenessFromButton(event)">Start Liveness Detection</button>
-          <button id="log-test" onclick="logTestClick()">Log</button>
+          <button id="capture" type="button">Capture</button>
         </div>
-        <div id="live-status" class="status">Click start to begin. Click log to test.</div>
+        <div id="live-status" class="status">Click start to begin. Click Capture to take a picture.</div>
       </div>
       <div class="grid">
         <section>
@@ -49,24 +49,23 @@
         <input type="file" id="document-upload" accept="image/*">
       </label>
       <div id="document-status" class="status muted">No document uploaded yet.</div>
-      <div class="document-actions">
+      <div id="comparison-status" class="status muted">No comparison made yet.</div>
+      <div class="control-buttons">
         <button id="document-analyze" type="button" disabled>Analyze Document</button>
+        <button id="compare-live-face" type="button" disabled>Compare against capture</button>
       </div>
-      <div class="document-preview">
-        <img id="document-preview" alt="Document preview will render here">
-        <canvas id="document-canvas" class="sr-only"></canvas>
-      </div>
-      <div class="face-comparison">
-        <h3>Face Comparison</h3>
-        <p>Upload a reference face from the document and compare it against the live feed.</p>
-        <div class="comparison-controls">
-          <label class="upload-control">
-            <span>Upload reference face</span>
-            <input type="file" id="reference-face-upload" accept="image/*">
-          </label>
-          <button id="compare-live-face" type="button">Compare against live capture</button>
-        </div>
-        <div id="comparison-status" class="status muted">Waiting for reference image.</div>
+      <div class="grid">
+        <section>
+          <div class="picture-preview">
+            <img id="picture-preview" alt="Captured live photo preview">
+          </div>
+        </section>
+        <section>
+          <div class="document-preview">
+            <img id="document-preview" alt="Document preview will render here">
+            <canvas id="document-canvas" class="sr-only"></canvas>
+          </div>
+        </section>
       </div>
     </section>
   </main>
