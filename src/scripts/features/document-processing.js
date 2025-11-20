@@ -2,6 +2,7 @@ import { LIVENESS_CONFIG } from "../config/app-config.js";
 import { createFileInputObserver, getElementOrThrow, setTextContent } from "../services/dom-utils.js";
 import { ensureOpencvReady } from "../services/opencv-service.js";
 import { getFacePluginSdk } from "../services/sdk-service.js";
+import { clearDocumentDetection, setDocumentDetection } from "../services/comparison-state.js";
 
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -26,6 +27,7 @@ export function registerDocumentUploadFeature({
   const state = {
     previewReady: false,
     detectionSessionPromise: null,
+    landmarkSessionPromise: null,
   };
 
   function ensureDetectionSession() {
@@ -33,6 +35,13 @@ export function registerDocumentUploadFeature({
       state.detectionSessionPromise = sdk.loadDetectionModel();
     }
     return state.detectionSessionPromise;
+  }
+
+  function ensureLandmarkSession() {
+    if (!state.landmarkSessionPromise) {
+      state.landmarkSessionPromise = sdk.loadLandmarkModel();
+    }
+    return state.landmarkSessionPromise;
   }
 
   async function analyzeDocument() {
@@ -53,19 +62,38 @@ export function registerDocumentUploadFeature({
       await ensureOpencvReady(LIVENESS_CONFIG.opencvLoadTimeoutMs);
 
       setTextContent(statusId, "Loading detection model...");
-      const session = await ensureDetectionSession();
+      const [session] = await Promise.all([ensureDetectionSession()]);
 
       setTextContent(statusId, "Analyzing document...");
       const snapshot = canvas.toDataURL("image/png");
       const detection = await sdk.detectFaceBase64(session, snapshot);
       if (!detection || detection.size === 0) {
         setTextContent(statusId, "No face detected in document.");
+        setDocumentDetection(null);
         return;
       }
-      setTextContent(statusId, `Detected ${detection.size} face(s) in document.`);
+      setTextContent(statusId, `Detected ${detection.size} face(s) in document. Detecting landmarks...`);
+      const landmarkSession = await ensureLandmarkSession();
+      const landmarks = await sdk.predictLandmarkBase64(
+        landmarkSession,
+        snapshot,
+        detection.bbox,
+      );
+      if (!landmarks || !landmarks.length) {
+        setTextContent(statusId, "Unable to detect facial landmarks.");
+        setDocumentDetection(null);
+        return;
+      }
+      setTextContent(statusId, "Document ready. Click Compare.");
+      setDocumentDetection({
+        snapshot,
+        detection,
+        landmarks,
+      });
     } catch (error) {
       console.error("[document-flow] detection error", error);
       setTextContent(statusId, "Unable to analyze document.");
+      setDocumentDetection(null);
     } finally {
       if (state.previewReady) {
         analyzeButton.disabled = false;
@@ -77,6 +105,7 @@ export function registerDocumentUploadFeature({
   const teardownInputObserver = createFileInputObserver(inputId, async (file) => {
     state.previewReady = false;
     analyzeButton.disabled = true;
+    clearDocumentDetection();
     setTextContent(statusId, `Loading ${file.name}...`);
     try {
       const dataUrl = await readFileAsDataUrl(file);
