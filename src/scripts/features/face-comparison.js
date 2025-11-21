@@ -7,34 +7,7 @@ import {
   onDocumentDetectionChange,
 } from "../services/comparison-state.js";
 import { getFacePluginSdk } from "../services/sdk-service.js";
-
-function extractFeatureVector(result) {
-  if (!Array.isArray(result) || !result.length) {
-    return null;
-  }
-  const tensorMap = result[0];
-  if (!tensorMap) {
-    return null;
-  }
-  const tensor =
-    tensorMap.output ??
-    tensorMap[Object.keys(tensorMap)[0] ?? ""] ??
-    null;
-  if (!tensor) {
-    return null;
-  }
-  if (tensor.data) {
-    return Array.from(tensor.data);
-  }
-  if (typeof tensor.values === "function") {
-    const iterator = tensor.values();
-    const entry = iterator?.next?.();
-    if (entry?.value) {
-      return Array.from(entry.value);
-    }
-  }
-  return null;
-}
+import { cloneFeatureVector, extractFeatureVector } from "../services/feature-utils.js";
 
 export function registerFaceComparisonFeature({ compareButtonId, statusId }) {
   const compareButton = document.getElementById(compareButtonId);
@@ -161,10 +134,22 @@ export function registerFaceComparisonFeature({ compareButtonId, statusId }) {
         throw new Error("Unable to extract captured photo features.");
       }
 
+      const docFeatureVector = cloneFeatureVector(docVector);
+      const liveFeatureVector = cloneFeatureVector(liveVector);
+      if (!docFeatureVector?.length || !liveFeatureVector?.length) {
+        throw new Error("Feature vectors are empty.");
+      }
+      if (docFeatureVector.length !== liveFeatureVector.length) {
+        throw new Error("Feature vectors length mismatch.");
+      }
+
       const similarityScore = sdk.matchFeature(
-        [...docVector],
-        [...liveVector],
+        docFeatureVector,
+        liveFeatureVector,
       );
+      if (!Number.isFinite(similarityScore)) {
+        throw new Error("SDK returned invalid similarity score.");
+      }
       const threshold = 0.4;
       const passed = similarityScore > threshold;
       const msg = passed

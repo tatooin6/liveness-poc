@@ -8,11 +8,44 @@
   </head>
   <body>
     <main id="app" class="demo-container">
-      <h1>Liveness PoC</h1>
-      <br>
-      <h3>Vanilla JS + HTML + CSS</h3>
-      <button id="actionButton" type="button">Click me</button>
+      <header>
+        <h1>Face Comparison Playground</h1>
+        <p class="tip">
+          Upload two portraits to run detection, landmarks, feature extraction, and match results through the FacePlugin SDK.
+        </p>
+      </header>
+
+      <section class="panel">
+        <h2>1. Upload the photos you want to compare</h2>
+        <div class="grid">
+          <div class="panel">
+            <h3>Image A</h3>
+            <label class="upload-control">
+              <span>Select an image</span>
+              <input id="referenceUpload" type="file" accept="image/*" />
+            </label>
+            <canvas id="referenceCanvas"></canvas>
+            <p id="referenceStatus" class="status muted">Waiting for upload…</p>
+          </div>
+          <div class="panel">
+            <h3>Image B</h3>
+            <label class="upload-control">
+              <span>Select an image</span>
+              <input id="comparisonUpload" type="file" accept="image/*" />
+            </label>
+            <canvas id="comparisonCanvas"></canvas>
+            <p id="comparisonStatus" class="status muted">Waiting for upload…</p>
+          </div>
+        </div>
+        <div class="comparison-controls">
+          <button id="compareUploadsButton" type="button" disabled>Compare Faces</button>
+          <p id="compareUploadsStatus" class="status muted">
+            Upload two images with detectable faces to compare.
+          </p>
+        </div>
+      </section>
     </main>
+    <script src="../node_modules/faceplugin-face-recognition-js/dist/facerecognition-sdk.js"></script>
     <script src="./scripts/main.js" type="module"></script>
   </body>
 </html>
