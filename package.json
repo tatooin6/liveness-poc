@@ -1,8 +1,25 @@
 {
+  "name": "web-liveness-demo",
+  "version": "1.0.0",
+  "description": "Browser-based proof of concept for document processing, manual face comparison, and liveness testing.",
+  "private": true,
+  "type": "module",
   "scripts": {
     "build:sdk": "node scripts/build-faceplugin-sdk.js",
     "start:dev": "npx http-server . -p 4173"
   },
+  "keywords": [
+    "face-api.js",
+    "liveness",
+    "face-recognition",
+    "poc"
+  ],
+  "author": {
+    "name": "Antonio Pantoja",
+    "email": "antonio.pantoja03130@gmail.com",
+    "url": "https://www.linkedin.com/in/antonio-pantoja-382b1a189/"
+  },
+  "license": "MIT",
   "dependencies": {
     "face-api.js": "^0.22.2",
     "faceplugin-face-recognition-js": "^0.0.1"
