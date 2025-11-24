@@ -1,0 +1,158 @@
+#### [>> Read English Version <<](./README_ES.md)
+
+# Sistema de prueba de Vida
+## Prueba de Concepto 
+
+This proof of concept demonstrates a browser-based identity verification flow that combines manual face comparison, document analysis, and live liveness capture. The UI is implemented in vanilla JavaScript/HTML/CSS so it can run without a bundler, making it easy to prototype integrations against face-api.js and the legacy FacePlugin SDK.
+
+## Contenido
+
+- [Sistema de prueba de Vida](#sistema-de-prueba-de-vida)
+  - [Prueba de Concepto](#prueba-de-concepto)
+  - [Contenido](#contenido)
+  - [Características](#características)
+  - [Stack Tecnológico](#stack-tecnológico)
+  - [Bibliotecas y Dependencias](#bibliotecas-y-dependencias)
+  - [Model Weights](#model-weights)
+  - [Estructura del Proyecto](#estructura-del-proyecto)
+  - [Desarrollo Local](#desarrollo-local)
+  - [Opcional: Reconstruir el SDK de FacePlugin](#opcional-reconstruir-el-sdk-de-faceplugin)
+  - [Flujos de Trabajo de Comparación Facial](#flujos-de-trabajo-de-comparación-facial)
+    - [Carga manual (`src/index.html`)](#carga-manual-srcindexhtml)
+    - [Prueba de Vida contrastado con documento de Identidad (`src/basic-liveness.html`)](#prueba-de-vida-contrastado-con-documento-de-identidad-srcbasic-livenesshtml)
+  - [Procesamiento de documentos y vitalidad](#procesamiento-de-documentos-y-vitalidad)
+  - [Solución de problemas](#solución-de-problemas)
+  - [Notas adicionales](#notas-adicionales)
+
+## Características
+
+- **Comparación manual de rostros**: Sube dos fotos, renderízalas en lienzos y compara descriptores con face-api.js.
+- **Procesamiento de documentos**: Sube una foto de un documento, ejecuta la detección y el marcado de puntos de referencia (mediante el SDK heredado de FacePlugin) y expone el resultado a otros flujos.
+- **Captura de fotos en vivo**: Captura un fotograma de la cámara web del usuario para compararlo con el documento.
+- **Vivacidad en vivo**: Inferencia continua de la cámara web (FacePlugin) que verifica eventos de vitalidad.
+- **Gestión de estados compartidos**: `comparison-state.js` mantiene sincronizadas las detecciones de documentos y las fotos capturadas en todas las funciones.
+
+## Stack Tecnológico
+
+
+- **Entorno de Ejecución (runtime):** Node.js (scripts), navegadores modernos (app)
+- **Lenguajes de Programación:** Vanilla JavaScript (módulos ES), HTML5, CSS3
+- **Inferencia del Modelo:** face-api.js (detección facial, puntos de referencia, descriptores) y FacePlugin (SDK existente utilizado por otros flujos)
+- **Servidor:** Servidor HTTP estático (no requiere empaquetador/bundler)
+
+## Bibliotecas y Dependencias
+
+| Dependencia                      | Propósito                                                                                                                                                                                                  |
+|----------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `face-api.js`                    | Detección facial, puntos de referencia y extracción de descriptores centrados en el navegador, utilizados en los nuevos flujos de comparación.                                                             |
+| `faceplugin-face-recognition-js` | Paquete SDK de FacePlugin heredado que expone la detección, los puntos de referencia, la extracción de características y los ayudantes de OpenCV. Aún se utiliza en las funciones de documentos y de vida. |
+| `http-server` (vía `npx`)        | Servidor estático rápido para alojar el proyecto localmente.                                                                                                                                               |
+
+
+## Model Weights
+
+- **face-api.js** se esperan en `/weights`. El cargador primero prueba la carpeta local y automáticamente recurre a la CDN oficial (`https://justadudewhohacks.github.io/face-api.js/models`). Debe revisarse que existan los manifests/shards `ssd_mobilenetv1`, `face_landmark_68` y `face_recognition` en `weights/` para ejecutar la comparación de rostros.
+- **FacePlugin** se encuentran en `model/` y son utilizados por el SDK existente.
+
+## Estructura del Proyecto
+
+```
+liveness-poc/
+├── js/                         # Recursos OpenCV prediseñados
+├── model/                      # Modelos ONNX de FacePlugin
+├── public/                     # Bibliotecas estáticas adicionales (marcador vacío)
+├── scripts/                    # Scripts de Node (p. ej., compilador del SDK de FacePlugin)
+├── src/
+│ ├── assets/                   # Imágenes, fuentes
+│ ├── basic-liveness.html       # Página de demostración con flujos de cámara en vivo
+│ ├── index.html                # Página de inicio para la comparación manual de rostros
+│ ├── scripts/
+│ │ ├── config/                 # Configuración global Constantes
+│ │ ├── features/               # Módulos de funciones (comparación manual, procesamiento de documentos, etc.)
+│ │ └── services/               # Utilidades compartidas: estado, ayudantes DOM, envoltorios del SDK, servicio face-api
+│ └── styles/                   # Estilos CSS
+├── weights/                    # Fragmentos del modelo face-api.js (añadir manifiestos)
+├── package.json
+└── README.md
+```
+
+## Desarrollo Local
+
+
+1. **Instalar dependencias**
+```bash
+npm install
+```
+2. **Construir el SDK de Liveness**
+```bash
+npm run build:sdk
+```
+3. **Iniciar el servidor estático**
+```bash
+npm run start:dev
+```
+Esto ejecuta `npx http-server . -p 4173`. Abra `http://localhost:4173/src/index.html` (comparación manual) o `http://localhost:4173/src/basic-liveness.html` para la demostración en vivo.
+4. **Requisitos del navegador**
+- Chromium/Firefox moderno (debe ser compatible con los módulos ES).
+- Permitir permisos de cámara para transmisiones en vivo.
+
+## Opcional: Reconstruir el SDK de FacePlugin
+
+Si se modifica el código fuente oficial de FacePlugin dentro de `scripts/`, se debe reconstruir el paquete del navegador con:
+
+```bash
+npm run build:sdk
+```
+
+La salida (`dist/facerecognition-sdk.js`) debe cargarse antes que los scripts de características; `index.html` ya la incluye a través del paquete npm de FacePlugin.
+
+
+## Flujos de Trabajo de Comparación Facial
+
+### Carga manual (`src/index.html`)
+
+1. Suba dos imágenes.
+2. Cada carga se renderiza en un `<canvas>` y ejecuta `analyzeFaceFromCanvas` (face-api.js).
+3. Una vez que ambos descriptores estén disponibles, haga clic en **Comparar rostros**.
+4. `manual-face-comparison.js` calcula la distancia euclidiana y muestra el veredicto (`threshold = 0.6`).
+
+### Prueba de Vida contrastado con documento de Identidad (`src/basic-liveness.html`)
+
+1. Analice un documento en el panel de procesamiento de documentos (página basic-liveness). Esto almacena una instantánea en `comparison-state`.
+2. Capture una foto en vivo mediante el módulo de captura de cámara web.
+3. Cuando ambas instantáneas existen, al hacer clic en **Comparar**:
+   - Se asegura la carga de los modelos de face-api.js.
+   - Se crean lienzos a partir de las instantáneas base64.
+   - Se ejecuta la detección, los puntos de referencia y los descriptores con face-api.js.
+   - Se calcula la distancia euclidiana y se actualiza el mensaje de estado con la respuesta de aprobado/reprobado.
+
+Ambos flujos comparten el servicio `face-api-service` para cargar modelos (con respaldo entre ponderaciones locales y CDN) y calcular las distancias de los descriptores.
+
+## Procesamiento de documentos y vitalidad
+
+- **Analizador de documentos (`document-processing.js`)**
+  - Utiliza la detección de FacePlugin y puntos de referencia en las fotos de los documentos cargados.
+  - Almacena los datos de detección y un documento de PNG para las características posteriores.
+- **Captura de fotos en vivo y vitalidad (`basic-liveness.html`)**
+  - FacePlugin gestiona la captura de vídeo, la detección y la inferencia de vitalidad.
+  - `comparison-state` conserva el último fotograma capturado para su comparación.
+
+Estos módulos aún dependen del SDK de FacePlugin porque requieren la integración con OpenCV y otros comportamientos propietarios. Se pueden refactorizar a face-api.js en futuras iteraciones.
+
+## Solución de problemas
+
+| Problema                                   | Resolución                                                                                                                                                                      |
+|--------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Las imágenes subidas nunca se muestran** | Confirme que la etiqueta del script `face-api.js` se cargue (verifique la consola del navegador) y que los archivos sean imágenes válidas.                                      |
+| **Errores al cargar el modelo**            | Asegúrese de que `weights/` contenga los archivos de manifiesto. Si no está disponible, asegúrese de tener acceso a internet para poder acceder a la CDN de respaldo.           |
+| **Botón de comparación deshabilitado**     | Deben existir tanto el archivo del documento como la foto capturada/en vivo. Si se volvió a subir un documento, vuelva a ejecutar el análisis para volver a rellenar el estado. |
+| **Permiso de cámara denegado**             | Vuelva a cargar la página y permita los permisos; algunos navegadores requieren HTTPS para `getUserMedia`.                                                                      |
+
+
+## Notas adicionales
+
+- El proyecto evita intencionalmente los empaquetadores para que cada módulo pueda inspeccionarse directamente en el navegador; las rutas de los módulos ES hacen referencia a archivos relativos.
+- Los estilos se encuentran en `src/styles/main.css` y se comparten entre las demostraciones.
+- Dado que el SDK de FacePlugin y los recursos de OpenCV son pesados, se recomienda ejecutar el proyecto mediante `http-server` para evitar problemas de CORS con las URL de los archivos.
+
+Este archivo README debe servir como referencia única para la integración, ejecución y extensión de la PoC de Liveness. Para una lógica más detallada de las características, explore los archivos `src/scripts/features/` y `src/scripts/services/`.

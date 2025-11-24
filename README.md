@@ -1,0 +1,151 @@
+#### [>> Leer Versión en Español <<](./README_ES.md)
+
+# Liveness PoC
+
+This proof of concept demonstrates a browser-based identity verification flow that combines manual face comparison, document analysis, and live liveness capture. The UI is implemented in vanilla JavaScript/HTML/CSS so it can run without a bundler, making it easy to prototype integrations against face-api.js and the legacy FacePlugin SDK.
+
+## Contents
+
+- [Liveness PoC](#liveness-poc)
+  - [Contents](#contents)
+  - [Features](#features)
+  - [Technology Stack](#technology-stack)
+  - [Key Libraries \& Dependencies](#key-libraries--dependencies)
+    - [Model Weights](#model-weights)
+  - [Project Structure](#project-structure)
+  - [Local Development](#local-development)
+    - [Optional: Rebuild FacePlugin SDK](#optional-rebuild-faceplugin-sdk)
+  - [Face Comparison Workflows](#face-comparison-workflows)
+    - [Manual Upload (`src/index.html`)](#manual-upload-srcindexhtml)
+    - [Proof of Life contrasted with Identity document (`src/basic-liveness.html`)](#proof-of-life-contrasted-with-identity-document-srcbasic-livenesshtml)
+  - [Document Processing \& Liveness](#document-processing--liveness)
+  - [Troubleshooting](#troubleshooting)
+  - [Additional Notes](#additional-notes)
+
+## Features
+
+- **Manual face comparison** – Upload two photos, render them onto canvases, and compare descriptors using face-api.js.
+- **Document pipeline** – Upload a document photo, run detection + landmarking (via the legacy FacePlugin SDK) and expose the result to other flows.
+- **Live photo capture** – Capture a frame from the user’s webcam to compare against the document.
+- **Live liveness** – Continuous webcam inference (FacePlugin) that checks for liveness events.
+- **Shared state management** – `comparison-state.js` keeps document detections and captured photos synchronized across features.
+
+## Technology Stack
+
+- **Runtime:** Node.js (scripts), modern browsers (app)
+- **Language:** Vanilla JavaScript (ES modules), HTML5, CSS3
+- **Model Inference:** face-api.js (face detection, landmarks, descriptors) and FacePlugin (existing SDK used by other flows)
+- **Serving:** Static HTTP server (no bundler required)
+
+## Key Libraries & Dependencies
+
+| Dependency                       | Purpose                                                                                                                                               |
+|----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `face-api.js`                    | Browser-focused face detection, landmarking, and descriptor extraction used in the new comparison flows.                                              |
+| `faceplugin-face-recognition-js` | Legacy FacePlugin SDK bundle that exposes detection, landmarks, feature extraction, and OpenCV helpers. Still used by document and liveness features. |
+| `http-server` (via `npx`)        | Quick static server to host the project locally.                                                                                                      |
+
+### Model Weights
+
+- **face-api.js** models are expected in `/weights`. The loader first tries the local folder and automatically falls back to the official CDN (`https://justadudewhohacks.github.io/face-api.js/models`). Place the `ssd_mobilenetv1`, `face_landmark_68`, and `face_recognition` manifests/shards in `weights/` to run fully offline.
+- **FacePlugin** models live under `model/` and are consumed by the existing SDK.
+
+## Project Structure
+
+```
+liveness-poc/
+├── js/                        # Prebuilt OpenCV assets
+├── model/                     # FacePlugin ONNX models
+├── public/                    # Extra static libs (empty placeholder)
+├── scripts/                   # Node scripts (e.g., FacePlugin SDK builder)
+├── src/
+│   ├── assets/                # Images, fonts
+│   ├── basic-liveness.html    # Demo page with live camera flows
+│   ├── index.html             # Manual face comparison landing page
+│   ├── scripts/
+│   │   ├── config/            # Global configuration constants
+│   │   ├── features/          # Feature modules (manual comparison, document processing, etc.)
+│   │   └── services/          # Shared utilities: state, DOM helpers, SDK wrappers, face-api service
+│   └── styles/                # CSS styling
+├── weights/                   # face-api.js model shards (add manifests)
+├── package.json
+└── README.md
+```
+
+## Local Development
+
+1. **Install dependencies**
+   ```bash
+   npm install
+   ```
+2. **Build the liveness SDK**
+   ```bash
+   npm run build:sdk
+   ```
+3. **Start the static server**
+   ```bash
+   npm run start:dev
+   ```
+   This runs `npx http-server . -p 4173`. Open `http://localhost:4173/src/index.html` (manual comparison) or `http://localhost:4173/src/basic-liveness.html` for the live demo.
+4. **Browser requirements**
+   - Modern Chromium/Firefox (must support ES modules).
+   - Allow camera permissions for live flows.
+
+### Optional: Rebuild FacePlugin SDK
+
+If you modify the official FacePlugin sources inside `scripts/`, rebuild the browser bundle:
+
+```bash
+npm run build:sdk
+```
+
+The output (`dist/facerecognition-sdk.js`) should be loaded before the feature scripts; `index.html` already includes it via the FacePlugin npm package.
+
+## Face Comparison Workflows
+
+### Manual Upload (`src/index.html`)
+
+1. Upload two images.
+2. Each upload renders to a `<canvas>` and runs `analyzeFaceFromCanvas` (face-api.js).
+3. Once both descriptors are available, click **Compare Faces**.
+4. `manual-face-comparison.js` computes Euclidean distance and displays the verdict (`threshold = 0.6`).
+
+### Proof of Life contrasted with Identity document (`src/basic-liveness.html`)
+
+1. Analyze a document in the document-processing panel (basic-liveness page). This stores a snapshot in `comparison-state`.
+2. Capture a live photo via the webcam capture module.
+3. When both snapshots exist, clicking **Compare**:
+   - Ensures face-api.js models are loaded.
+   - Builds canvases from the base64 snapshots.
+   - Runs detection, landmarks, and descriptors using face-api.js.
+   - Calculates Euclidean distance and updates the status message with pass/fail feedback.
+
+Both flows share the `face-api-service` to load models (with fallback between local weights and CDN) and compute descriptor distances.
+
+## Document Processing & Liveness
+
+- **Document analyzer (`document-processing.js`)**
+  - Uses FacePlugin detection + landmarks on uploaded document photos.
+  - Stores detection data and a PNG snapshot for downstream features.
+- **Live photo capture & liveness (`basic-liveness.html`)**
+  - FacePlugin handles video capture, detection, and liveness inference.
+  - `comparison-state` keeps the latest captured frame for comparison.
+
+These modules still rely on the FacePlugin SDK because they require OpenCV integration and other proprietary behaviors. They can be refactored to face-api.js in future iterations.
+
+## Troubleshooting
+
+| Issue                             | Resolution                                                                                                                         |
+|-----------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| **Uploaded images never display** | Confirm `face-api.js` script tag loads (check browser console) and that files are valid images.                                    |
+| **Model loading errors**          | Make sure `weights/` contains the manifest files. If not available, ensure internet access so the fallback CDN can be reached.     |
+| **Compare button disabled**       | Both document snapshot and captured/live photo must exist. If a document was re-uploaded, re-run the analysis to repopulate state. |
+| **Camera permission denied**      | Reload the page and allow permissions; some browsers require HTTPS for `getUserMedia`.                                             |
+
+## Additional Notes
+
+- The project intentionally avoids bundlers so that each module can be inspected directly in the browser; ES module paths reference relative files.
+- Styling lives in `src/styles/main.css` and is shared between demos.
+- Because the FacePlugin SDK and OpenCV assets are heavy, running the project via `http-server` is recommended to avoid CORS issues with file URLs.
+
+This README should serve as the single reference for onboarding, running, and extending the Liveness PoC. For deeper feature-specific logic, explore the files within `src/scripts/features/` and `src/scripts/services/`.
