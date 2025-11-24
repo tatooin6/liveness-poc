@@ -1,10 +1,30 @@
-const button = document.getElementById('actionButton');
-const app = document.getElementById('app');
+import { registerManualFaceComparisonTest } from "./features/manual-face-comparison.js";
 
-if (button && app) {
-  button.addEventListener('click', () => {
-    const notice = document.createElement('p');
-    notice.textContent = 'Interaction handled at ' + new Date().toLocaleTimeString();
-    app.appendChild(notice);
+try {
+  registerManualFaceComparisonTest({
+    slots: [
+      {
+        key: "reference",
+        label: "Image A",
+        inputId: "referenceUpload",
+        canvasId: "referenceCanvas",
+        statusId: "referenceStatus",
+      },
+      {
+        key: "comparison",
+        label: "Image B",
+        inputId: "comparisonUpload",
+        canvasId: "comparisonCanvas",
+        statusId: "comparisonStatus",
+      },
+    ],
+    compareButtonId: "compareUploadsButton",
+    compareStatusId: "compareUploadsStatus",
   });
+} catch (error) {
+  console.error("[manual-face-comparison] init error", error);
+  const status = document.getElementById("compareUploadsStatus");
+  if (status) {
+    status.textContent = "face-api.js failed to load. Check build instructions and reload.";
+  }
 }

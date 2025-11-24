@@ -1,39 +1,29 @@
-import { LIVENESS_CONFIG } from "../config/app-config.js";
 import { setTextContent } from "../services/dom-utils.js";
-import { ensureOpencvReady } from "../services/opencv-service.js";
 import {
   getComparisonState,
   onCapturedPhotoChange,
   onDocumentDetectionChange,
 } from "../services/comparison-state.js";
-import { getFacePluginSdk } from "../services/sdk-service.js";
+import {
+  analyzeFaceFromCanvas,
+  computeFaceDistance,
+  ensureFaceApiReady,
+} from "../services/face-api-service.js";
 
-function extractFeatureVector(result) {
-  if (!Array.isArray(result) || !result.length) {
-    return null;
-  }
-  const tensorMap = result[0];
-  if (!tensorMap) {
-    return null;
-  }
-  const tensor =
-    tensorMap.output ??
-    tensorMap[Object.keys(tensorMap)[0] ?? ""] ??
-    null;
-  if (!tensor) {
-    return null;
-  }
-  if (tensor.data) {
-    return Array.from(tensor.data);
-  }
-  if (typeof tensor.values === "function") {
-    const iterator = tensor.values();
-    const entry = iterator?.next?.();
-    if (entry?.value) {
-      return Array.from(entry.value);
-    }
-  }
-  return null;
+function createCanvasFromDataUrl(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas);
+    };
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
 }
 
 export function registerFaceComparisonFeature({ compareButtonId, statusId }) {
@@ -42,38 +32,17 @@ export function registerFaceComparisonFeature({ compareButtonId, statusId }) {
     return () => {};
   }
 
-  const sdk = getFacePluginSdk();
   let isComparing = false;
-  let detectionSessionPromise = null;
-  let landmarkSessionPromise = null;
-  let featureSessionPromise = null;
-
-  const ensureDetectionSession = () => {
-    if (!detectionSessionPromise) {
-      detectionSessionPromise = sdk.loadDetectionModel();
-    }
-    return detectionSessionPromise;
-  };
-  const ensureLandmarkSession = () => {
-    if (!landmarkSessionPromise) {
-      landmarkSessionPromise = sdk.loadLandmarkModel();
-    }
-    return landmarkSessionPromise;
-  };
-  const ensureFeatureSession = () => {
-    if (!featureSessionPromise) {
-      featureSessionPromise = sdk.loadFeatureModel();
-    }
-    return featureSessionPromise;
-  };
 
   const updateButtonState = () => {
     const { capturedPhoto, documentDetection } = getComparisonState();
-    compareButton.disabled = !(
-      capturedPhoto &&
-      documentDetection &&
-      documentDetection.landmarks?.length
-    );
+    compareButton.disabled =
+      isComparing ||
+      !(
+        capturedPhoto &&
+        documentDetection &&
+        documentDetection.snapshot
+      );
   };
 
   const updateStatusMessage = () => {
@@ -81,7 +50,7 @@ export function registerFaceComparisonFeature({ compareButtonId, statusId }) {
       return;
     }
     const { capturedPhoto, documentDetection } = getComparisonState();
-    if (capturedPhoto && documentDetection?.landmarks?.length) {
+    if (capturedPhoto && documentDetection?.snapshot) {
       setTextContent(statusId, "Captured photo and document ready. Click compare.");
     } else if (!capturedPhoto && !documentDetection) {
       setTextContent(statusId, "Capture your photo, then analyze a document.");
@@ -103,73 +72,47 @@ export function registerFaceComparisonFeature({ compareButtonId, statusId }) {
 
   async function handleCompare() {
     const { capturedPhoto, documentDetection } = getComparisonState();
-    const docLandmarks = documentDetection?.landmarks?.[0];
-    if (!capturedPhoto || !documentDetection || !docLandmarks) {
+    const docSnapshot = documentDetection?.snapshot;
+    if (!capturedPhoto || !docSnapshot) {
       updateButtonState();
       updateStatusMessage();
       return;
     }
 
     isComparing = true;
-    setTextContent(statusId, "Comparing captured photo with document face...");
+    updateButtonState();
+    setTextContent(statusId, "Loading face-api.js models...");
 
     try {
-      await ensureOpencvReady(LIVENESS_CONFIG.opencvLoadTimeoutMs);
-      const [featureSession, detectionSession, landmarkSession] = await Promise.all([
-        ensureFeatureSession(),
-        ensureDetectionSession(),
-        ensureLandmarkSession(),
+      await ensureFaceApiReady();
+      setTextContent(statusId, "Preparing images for comparison...");
+      const [docCanvas, liveCanvas] = await Promise.all([
+        createCanvasFromDataUrl(docSnapshot),
+        createCanvasFromDataUrl(capturedPhoto),
       ]);
-
-      const docFeatures = await sdk.extractFeatureBase64(
-        featureSession,
-        documentDetection.snapshot,
-        [docLandmarks],
-      );
-      const docVector = extractFeatureVector(docFeatures);
-      if (!docVector) {
-        throw new Error("Unable to extract document features.");
-      }
-
-      const liveDetection = await sdk.detectFaceBase64(
-        detectionSession,
-        capturedPhoto,
-      );
-      if (!liveDetection || liveDetection.size === 0) {
-        setTextContent(statusId, "No face detected in captured photo.");
+      setTextContent(statusId, "Detecting faces in both images...");
+      const [docAnalysis, liveAnalysis] = await Promise.all([
+        analyzeFaceFromCanvas(docCanvas),
+        analyzeFaceFromCanvas(liveCanvas),
+      ]);
+      if (!docAnalysis.descriptor) {
+        setTextContent(statusId, "Unable to detect a face in the document snapshot. Re-analyze the document.");
         return;
       }
-
-      const liveLandmarks = await sdk.predictLandmarkBase64(
-        landmarkSession,
-        capturedPhoto,
-        liveDetection.bbox,
-      );
-      const liveLandmark = liveLandmarks?.[0];
-      if (!liveLandmark) {
-        setTextContent(statusId, "Unable to detect landmarks in captured photo.");
+      if (!liveAnalysis.descriptor) {
+        setTextContent(statusId, "Unable to detect a face in the captured photo. Capture a clearer photo.");
         return;
       }
-
-      const liveFeatures = await sdk.extractFeatureBase64(
-        featureSession,
-        capturedPhoto,
-        [liveLandmark],
-      );
-      const liveVector = extractFeatureVector(liveFeatures);
-      if (!liveVector) {
-        throw new Error("Unable to extract captured photo features.");
+      setTextContent(statusId, "Computing similarity score...");
+      const distance = computeFaceDistance(docAnalysis.descriptor, liveAnalysis.descriptor);
+      if (!Number.isFinite(distance)) {
+        throw new Error("face-api.js returned an invalid distance.");
       }
-
-      const similarityScore = sdk.matchFeature(
-        [...docVector],
-        [...liveVector],
-      );
-      const threshold = 0.4;
-      const passed = similarityScore > threshold;
+      const threshold = 0.6;
+      const passed = distance < threshold;
       const msg = passed
-        ? `Match OK ✔️ Similarity score = ${similarityScore.toFixed(3)}`
-        : `Faces do not match ❌ score = ${similarityScore.toFixed(3)}`;
+        ? `Match OK ✔️ distance = ${distance.toFixed(3)}`
+        : `Faces do not match ❌ distance = ${distance.toFixed(3)}`;
       setTextContent(statusId, msg);
     } catch (error) {
       console.error("[face-comparison] comparison error", error);
