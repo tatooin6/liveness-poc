@@ -25,6 +25,6 @@ try {
   console.error("[manual-face-comparison] init error", error);
   const status = document.getElementById("compareUploadsStatus");
   if (status) {
-    status.textContent = "FacePlugin SDK failed to load. Check build instructions and reload.";
+    status.textContent = "face-api.js failed to load. Check build instructions and reload.";
   }
 }

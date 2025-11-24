@@ -1,8 +1,9 @@
-import { LIVENESS_CONFIG } from "../config/app-config.js";
 import { setTextContent } from "../services/dom-utils.js";
-import { ensureOpencvReady } from "../services/opencv-service.js";
-import { getFacePluginSdk } from "../services/sdk-service.js";
-import { cloneFeatureVector, extractFeatureVector } from "../services/feature-utils.js";
+import {
+  analyzeFaceFromCanvas,
+  computeFaceDistance,
+  ensureFaceApiReady,
+} from "../services/face-api-service.js";
 
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -42,29 +43,6 @@ export function registerManualFaceComparisonTest({
   if (!compareButton || !slots?.length) {
     return () => {};
   }
-  const sdk = getFacePluginSdk();
-  let detectionSessionPromise = null;
-  let landmarkSessionPromise = null;
-  let featureSessionPromise = null;
-
-  function ensureDetectionSession() {
-    if (!detectionSessionPromise) {
-      detectionSessionPromise = sdk.loadDetectionModel();
-    }
-    return detectionSessionPromise;
-  }
-  function ensureLandmarkSession() {
-    if (!landmarkSessionPromise) {
-      landmarkSessionPromise = sdk.loadLandmarkModel();
-    }
-    return landmarkSessionPromise;
-  }
-  function ensureFeatureSession() {
-    if (!featureSessionPromise) {
-      featureSessionPromise = sdk.loadFeatureModel();
-    }
-    return featureSessionPromise;
-  }
 
   const slotState = new Map();
   const inputTeardowns = [];
@@ -78,58 +56,34 @@ export function registerManualFaceComparisonTest({
   }
 
   async function analyzeSlot(slot, dataUrl) {
-    slotState.set(slot.key, { base64: dataUrl, hasFace: false, vector: null });
+    slotState.set(slot.key, { base64: dataUrl, hasFace: false, descriptor: null });
     updateCompareState();
     try {
       setTextContent(slot.statusId, "Preparing image...");
       await drawImageOnCanvas(slot.canvasId, dataUrl);
-      setTextContent(slot.statusId, "Loading models...");
-      await ensureOpencvReady(LIVENESS_CONFIG.opencvLoadTimeoutMs);
-      const [featureSession, detectionSession, landmarkSession] = await Promise.all([
-        ensureFeatureSession(),
-        ensureDetectionSession(),
-        ensureLandmarkSession(),
-      ]);
+      setTextContent(slot.statusId, "Loading face-api models...");
+      await ensureFaceApiReady();
+      const canvas = document.getElementById(slot.canvasId);
+      if (!canvas) {
+        throw new Error(`Canvas ${slot.canvasId} not found.`);
+      }
       setTextContent(slot.statusId, "Detecting face...");
-      const detection = await sdk.detectFaceBase64(detectionSession, dataUrl);
-      if (!detection || detection.size === 0) {
+      const { descriptor } = await analyzeFaceFromCanvas(canvas);
+      if (!descriptor) {
         setTextContent(slot.statusId, "No face detected. Try a different image.");
-        slotState.set(slot.key, { base64: dataUrl, hasFace: false, vector: null });
+        slotState.set(slot.key, { base64: dataUrl, hasFace: false, descriptor: null });
         return;
-      }
-      setTextContent(slot.statusId, "Detecting landmarks...");
-      const landmarks = await sdk.predictLandmarkBase64(
-        landmarkSession,
-        dataUrl,
-        detection.bbox,
-      );
-      const firstLandmark = landmarks?.[0];
-      if (!firstLandmark) {
-        setTextContent(slot.statusId, "Unable to detect landmarks.");
-        slotState.set(slot.key, { base64: dataUrl, hasFace: false, vector: null });
-        return;
-      }
-      setTextContent(slot.statusId, "Extracting features...");
-      const features = await sdk.extractFeatureBase64(
-        featureSession,
-        dataUrl,
-        [firstLandmark],
-      );
-      const vector = extractFeatureVector(features);
-      const normalizedVector = cloneFeatureVector(vector);
-      if (!normalizedVector) {
-        throw new Error("Unable to read feature vector.");
       }
       slotState.set(slot.key, {
         base64: dataUrl,
         hasFace: true,
-        vector: normalizedVector,
+        descriptor,
       });
       setTextContent(slot.statusId, "Face analyzed. Ready for comparison.");
     } catch (error) {
       console.error("[manual-face-comparison] analyze error", error);
       setTextContent(slot.statusId, "Unable to process this image.");
-      slotState.set(slot.key, { base64: dataUrl, hasFace: false, vector: null });
+      slotState.set(slot.key, { base64: dataUrl, hasFace: false, descriptor: null });
     } finally {
       updateCompareState();
     }
@@ -169,36 +123,24 @@ export function registerManualFaceComparisonTest({
     }
     try {
       compareButton.disabled = true;
-      setTextContent(compareStatusId, "Matching feature vectors...");
+      setTextContent(compareStatusId, "Computing face descriptors...");
       const [firstSlot, secondSlot] = slots.map((slot) => slotState.get(slot.key));
-      const firstVector = cloneFeatureVector(firstSlot?.vector);
-      const secondVector = cloneFeatureVector(secondSlot?.vector);
-      if (!firstVector?.length || !secondVector?.length) {
-        setTextContent(compareStatusId, "Unable to read feature vectors. Re-upload both images.");
+      const firstDescriptor = firstSlot?.descriptor;
+      const secondDescriptor = secondSlot?.descriptor;
+      if (!firstDescriptor?.length || !secondDescriptor?.length) {
+        setTextContent(compareStatusId, "Unable to read face descriptors. Re-upload both images.");
         return;
       }
-      if (firstVector.length !== secondVector.length) {
-        console.warn(
-          "[manual-face-comparison] feature length mismatch",
-          firstVector.length,
-          secondVector.length,
-        );
-        setTextContent(compareStatusId, "Feature vectors mismatch. Please try with different images.");
+      const distance = computeFaceDistance(firstDescriptor, secondDescriptor);
+      if (!Number.isFinite(distance)) {
+        setTextContent(compareStatusId, "Received invalid distance from face-api. Retry with different photos.");
         return;
       }
-      const similarityScore = sdk.matchFeature(
-        firstVector,
-        secondVector,
-      );
-      if (!Number.isFinite(similarityScore)) {
-        setTextContent(compareStatusId, "Received invalid score from SDK. Retry with different photos.");
-        return;
-      }
-      const threshold = 0.4;
-      const passed = similarityScore > threshold;
+      const threshold = 0.6;
+      const passed = distance < threshold;
       const message = passed
-        ? `Match OK ✔️ score = ${similarityScore.toFixed(3)}`
-        : `Faces do not match ❌ score = ${similarityScore.toFixed(3)}`;
+        ? `Match OK ✔️ distance = ${distance.toFixed(3)}`
+        : `Faces do not match ❌ distance = ${distance.toFixed(3)}`;
       setTextContent(compareStatusId, message);
     } catch (error) {
       console.error("[manual-face-comparison] compare error", error);
