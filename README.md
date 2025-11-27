@@ -160,6 +160,8 @@ This README should serve as the single reference for onboarding, running, and ex
 ### To be added
 
 - Progress bar for facial life detection in different directions.
+- Language selection implementation.
+- Dialogue detection. Check [whisper](https://github.com/openai/whisper).
 - Establish fallback for missing device permissions (webcam).
 - OCR (Optical Character Recognition) engine for the extraction of text from presented personal document.
 - [CD](https://ciudadaniadigital.bo/admin/home) integration for data verification.
