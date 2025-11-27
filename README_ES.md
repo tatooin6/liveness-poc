@@ -1,13 +1,18 @@
 #### [>> Read English Version <<](./README_ES.md)
 
-# Sistema de prueba de Vida
+[![Estado del Proyecto](https://img.shields.io/badge/status-activo-success.svg)](#sistema-de-prueba-de-vida)
+[![Node.js >= 18](https://img.shields.io/badge/node-%3E%3D18.0.0-339933?logo=node.js&logoColor=white)](#desarrollo-local)
+[![Licencia MIT](https://img.shields.io/badge/licencia-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Contribuciones Bienvenidas](https://img.shields.io/badge/contribuciones-bienvenidas-brightgreen.svg)](#desarrollo-local)
+
+# Sistema de Prueba de Vida
 ## Prueba de Concepto 
 
-This proof of concept demonstrates a browser-based identity verification flow that combines manual face comparison, document analysis, and live liveness capture. The UI is implemented in vanilla JavaScript/HTML/CSS so it can run without a bundler, making it easy to prototype integrations against face-api.js and the legacy FacePlugin SDK.
+Esta prueba de concepto demuestra un flujo de verificación de identidad basado en navegador que combina la comparación manual de rostros, el análisis de documentos y la captura de vida en vivo. La interfaz de usuario está implementada en JavaScript/HTML/CSS estándar, por lo que puede ejecutarse sin un empaquetador, lo que facilita la creación de prototipos de integraciones con [face-api.js](https://justadudewhohacks.github.io/face-api.js/docs/index.html) y [SDK de FacePlugin](https://github.com/Faceplugin-ltd/FaceRecognition-LivenessDetection-Javascript).
 
 ## Contenido
 
-- [Sistema de prueba de Vida](#sistema-de-prueba-de-vida)
+- [Sistema de Prueba de Vida](#sistema-de-prueba-de-vida)
   - [Prueba de Concepto](#prueba-de-concepto)
   - [Contenido](#contenido)
   - [Características](#características)
@@ -23,6 +28,8 @@ This proof of concept demonstrates a browser-based identity verification flow th
   - [Procesamiento de documentos y vitalidad](#procesamiento-de-documentos-y-vitalidad)
   - [Solución de problemas](#solución-de-problemas)
   - [Notas adicionales](#notas-adicionales)
+    - [Por Agregar](#por-agregar)
+    - [⚠️ ADVERTENCIA DE SEGURIDAD:](#️-advertencia-de-seguridad)
 
 ## Características
 
@@ -63,14 +70,14 @@ liveness-poc/
 ├── public/                     # Bibliotecas estáticas adicionales (marcador vacío)
 ├── scripts/                    # Scripts de Node (p. ej., compilador del SDK de FacePlugin)
 ├── src/
-│ ├── assets/                   # Imágenes, fuentes
-│ ├── basic-liveness.html       # Página de demostración con flujos de cámara en vivo
-│ ├── index.html                # Página de inicio para la comparación manual de rostros
-│ ├── scripts/
-│ │ ├── config/                 # Configuración global Constantes
-│ │ ├── features/               # Módulos de funciones (comparación manual, procesamiento de documentos, etc.)
-│ │ └── services/               # Utilidades compartidas: estado, ayudantes DOM, envoltorios del SDK, servicio face-api
-│ └── styles/                   # Estilos CSS
+│   ├── assets/                 # Imágenes, fuentes, etc.
+│   ├── basic-liveness.html     # Página de demostración con flujos de cámara en vivo
+│   ├── index.html              # Página de inicio para la comparación manual de rostros
+│   ├── scripts/
+│   │   ├── config/             # Configuración global Constantes
+│   │   ├── features/           # Módulos de funciones (comparación manual, procesamiento de documentos, etc.)
+│   │   └── services/           # Utilidades compartidas: estado, ayudantes DOM, envoltorios del SDK, servicio face-api
+│   └── styles/                 # Estilos CSS
 ├── weights/                    # Fragmentos del modelo face-api.js (añadir manifiestos)
 ├── package.json
 └── README.md
@@ -80,17 +87,17 @@ liveness-poc/
 
 
 1. **Instalar dependencias**
-```bash
-npm install
-```
+    ```bash
+    npm install
+    ```
 2. **Construir el SDK de Liveness**
-```bash
-npm run build:sdk
-```
+    ```bash
+    npm run build:sdk
+    ```
 3. **Iniciar el servidor estático**
-```bash
-npm run start:dev
-```
+    ```bash
+    npm run start:dev
+    ```
 Esto ejecuta `npx http-server . -p 4173`. Abra `http://localhost:4173/src/index.html` (comparación manual) o `http://localhost:4173/src/basic-liveness.html` para la demostración en vivo.
 4. **Requisitos del navegador**
 - Chromium/Firefox moderno (debe ser compatible con los módulos ES).
@@ -156,3 +163,22 @@ Estos módulos aún dependen del SDK de FacePlugin porque requieren la integraci
 - Dado que el SDK de FacePlugin y los recursos de OpenCV son pesados, se recomienda ejecutar el proyecto mediante `http-server` para evitar problemas de CORS con las URL de los archivos.
 
 Este archivo README debe servir como referencia única para la integración, ejecución y extensión de la PoC de Liveness. Para una lógica más detallada de las características, explore los archivos `src/scripts/features/` y `src/scripts/services/`.
+
+### Por Agregar
+
+- Barra de progreso para la detección de vida facial en diferentes direcciones.
+- Establecer un respaldo para los permisos faltantes del dispositivo (cámara web).
+- Motor OCR (Reconocimiento óptico de caracteres) para la extracción de texto de un documento personal presentado.
+- Integración [CD](https://ciudadaniadigital.bo/admin/home) para verificación de datos.
+- Agregar pruebas unitarias.
+
+---
+### ⚠️ ADVERTENCIA DE SEGURIDAD:
+
+Código de prueba de concepto (PoC): úselo bajo su propio riesgo
+
+Este proyecto es una prueba de concepto y tiene vulnerabilidades de seguridad conocidas.
+**No está diseñado para uso en producción.**
+Este proyecto se proporciona "tal cual" **solo con fines de demostración**.
+
+---

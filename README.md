@@ -1,8 +1,13 @@
 #### [>> Leer Versión en Español <<](./README_ES.md)
 
+[![Project Status](https://img.shields.io/badge/status-active-success.svg)](#liveness-poc)
+[![Node.js >= 18](https://img.shields.io/badge/node-%3E%3D18.0.0-339933?logo=node.js&logoColor=white)](#local-development)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#local-development)
+
 # Liveness PoC
 
-This proof of concept demonstrates a browser-based identity verification flow that combines manual face comparison, document analysis, and live liveness capture. The UI is implemented in vanilla JavaScript/HTML/CSS so it can run without a bundler, making it easy to prototype integrations against face-api.js and the legacy FacePlugin SDK.
+This proof of concept demonstrates a browser-based identity verification flow that combines manual face comparison, document analysis, and live liveness capture. The UI is implemented in vanilla JavaScript/HTML/CSS so it can run without a bundler, making it easy to prototype integrations against [face-api.js](https://justadudewhohacks.github.io/face-api.js/docs/index.html) and the [FacePlugin SDK](https://github.com/Faceplugin-ltd/FaceRecognition-LivenessDetection-Javascript).
 
 ## Contents
 
@@ -21,6 +26,8 @@ This proof of concept demonstrates a browser-based identity verification flow th
   - [Document Processing \& Liveness](#document-processing--liveness)
   - [Troubleshooting](#troubleshooting)
   - [Additional Notes](#additional-notes)
+    - [To be added](#to-be-added)
+    - [⚠️ SECURITY WARNING:](#️-security-warning)
 
 ## Features
 
@@ -149,3 +156,22 @@ These modules still rely on the FacePlugin SDK because they require OpenCV integ
 - Because the FacePlugin SDK and OpenCV assets are heavy, running the project via `http-server` is recommended to avoid CORS issues with file URLs.
 
 This README should serve as the single reference for onboarding, running, and extending the Liveness PoC. For deeper feature-specific logic, explore the files within `src/scripts/features/` and `src/scripts/services/`.
+
+### To be added
+
+- Progress bar for facial life detection in different directions.
+- Establish fallback for missing device permissions (webcam).
+- OCR (Optical Character Recognition) engine for the extraction of text from presented personal document.
+- [CD](https://ciudadaniadigital.bo/admin/home) integration for data verification.
+- Add Unit Tests.
+
+---
+### ⚠️ SECURITY WARNING: 
+
+Proof of Concept (PoC) Code - Use At Your Own Risk
+
+This project is a Proof of Concept and has known security vulnerabilities. 
+**It is not intended for production use.**
+This project is provided "as is" **for demonstration purposes only**.
+
+---
