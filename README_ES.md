@@ -167,6 +167,8 @@ Este archivo README debe servir como referencia única para la integración, eje
 ### Por Agregar
 
 - Barra de progreso para la detección de vida facial en diferentes direcciones.
+- Implementación de seleccion de idiomas.
+- Detección de dialogo. Revisar [whisper](https://github.com/openai/whisper).
 - Establecer un respaldo para los permisos faltantes del dispositivo (cámara web).
 - Motor OCR (Reconocimiento óptico de caracteres) para la extracción de texto de un documento personal presentado.
 - Integración [CD](https://ciudadaniadigital.bo/admin/home) para verificación de datos.
