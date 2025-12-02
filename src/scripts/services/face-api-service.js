@@ -26,6 +26,7 @@ async function loadModelsFrom(baseUrl) {
     api.nets.ssdMobilenetv1.loadFromUri(baseUrl),
     api.nets.faceLandmark68Net.loadFromUri(baseUrl),
     api.nets.faceRecognitionNet.loadFromUri(baseUrl),
+    api.nets.faceExpressionNet.loadFromUri(baseUrl),
   ]);
   activeModelBase = baseUrl;
 }

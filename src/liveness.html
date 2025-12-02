@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Liveness Detection (Demo)</title>
+    <link rel="stylesheet" href="./styles/main.css" />
+  </head>
+  <body>
+    <main class="demo-container">
+      <div class="grid">
+        <h1>Face Verification (Demo)</h1>
+        <div class="control-buttons">
+          <button id="start-liveness" type="button">Start Liveness</button>
+        </div>
+        <p id="expression-status" class="status muted">Expression: click start to begin detection.</p>
+      </div>
+      <div class="panel">
+        <section>
+          <video id="live-video" width="640" height="480" autoplay muted playsinline></video>
+        </section>
+      </div>
+    </main>
+    <script src="../node_modules/face-api.js/dist/face-api.min.js"></script>
+    <script src="./scripts/liveness.js" type="module"></script>
+  </body>
+</html>
