@@ -4,15 +4,28 @@ import { ensureFaceApiReady } from "./services/face-api-service.js";
 import { getElementOrThrow, setTextContent } from "./services/dom-utils.js";
 
 const VIDEO_ELEMENT_ID = "live-video";
-const BUTTON_ID = "start-liveness";
+const START_BUTTON = "start-liveness";
 const EXPRESSION_ELEMENT_ID = "expression-status";
 const DETECTION_INTERVAL_MS = 600;
+const EXPRESSION_CONFIDENCE_THRESHOLD = 0.6;
+const TARGET_EXPRESSION_DURATION_MS = 5000;
+const EXPRESSIONS = [
+  { key: "happy", label: "Happy" },
+  { key: "sad", label: "Sad" },
+  { key: "angry", label: "Angry" },
+  { key: "fearful", label: "Fearful" },
+  { key: "disgusted", label: "Disgusted" },
+  { key: "surprised", label: "Surprised" },
+];
 
 const state = {
   stream: null,
   running: false,
   detectionOptions: null,
+  expressionStats: createInitialExpressionStats(),
 };
+
+const expressionElements = new Map();
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -32,6 +45,17 @@ function getDetectionOptions() {
     state.detectionOptions = new api.SsdMobilenetv1Options({ minConfidence: 0.6 });
   }
   return state.detectionOptions;
+}
+
+function createInitialExpressionStats() {
+  return EXPRESSIONS.reduce((acc, expression) => {
+    acc[expression.key] = {
+      durationMs: 0,
+      percent: 0,
+      completed: false,
+    };
+    return acc;
+  }, {});
 }
 
 function cleanupVideoElement() {
@@ -73,7 +97,63 @@ function extractBestExpression(expressions) {
   return { label, score };
 }
 
+function initExpressionElements() {
+  EXPRESSIONS.forEach(({ key }) => {
+    const checkbox = getElementOrThrow(`expr-${key}-checkbox`);
+    const progress = getElementOrThrow(`expr-${key}-progress`);
+    const percentLabel = document.getElementById(`expr-${key}-percent`);
+    expressionElements.set(key, { checkbox, progress, percentLabel });
+  });
+  renderAllExpressions();
+}
+
+/**
+  * Update the progress bar given its expression
+  */
+function renderExpressionState(key) {
+  console.log(`Render ${key} expression.`);
+  const entry = state.expressionStats[key];
+  const ui = expressionElements.get(key);
+  if (!entry || !ui) {
+    return;
+  }
+  const percentValue = Math.min(Math.round(entry.percent), 100);
+  ui.progress.value = percentValue;
+  if (ui.percentLabel) {
+    ui.percentLabel.textContent = `${percentValue}%`;
+  }
+  ui.checkbox.checked = entry.completed;
+  ui.checkbox.disabled = entry.completed;
+}
+
+function renderAllExpressions() {
+  EXPRESSIONS.forEach(({ key }) => renderExpressionState(key));
+}
+
+function resetExpressionProgress() {
+  state.expressionStats = createInitialExpressionStats();
+  renderAllExpressions();
+}
+
+function trackExpressionDuration(label, deltaMs, score) {
+  if (!label || score < EXPRESSION_CONFIDENCE_THRESHOLD) {
+    return;
+  }
+  const entry = state.expressionStats[label];
+  if (!entry || entry.completed) {
+    return;
+  }
+  entry.durationMs = Math.min(entry.durationMs + deltaMs, TARGET_EXPRESSION_DURATION_MS);
+  entry.percent = (entry.durationMs / TARGET_EXPRESSION_DURATION_MS) * 100;
+  if (entry.durationMs >= TARGET_EXPRESSION_DURATION_MS) {
+    entry.completed = true;
+    entry.percent = 100;
+  }
+  renderExpressionState(label);
+}
+
 async function detectExpression() {
+  console.log("detecting expression");
   const video = document.getElementById(VIDEO_ELEMENT_ID);
   if (!video || video.readyState < 2) {
     return { label: null, score: 0 };
@@ -89,9 +169,15 @@ async function detectExpression() {
 }
 
 async function runDetectionLoop() {
+  console.log("Running detection Loop");
+  let lastUpdateTime = performance.now();
   while (state.running) {
     try {
       const { label, score } = await detectExpression();
+      const now = performance.now();
+      const deltaMs = Math.max(now - lastUpdateTime, 0);
+      lastUpdateTime = now;
+      trackExpressionDuration(label, deltaMs, score);
       if (!state.running) {
         break;
       }
@@ -108,24 +194,25 @@ async function startDetection() {
   if (state.running) {
     return;
   }
-  const button = getElementOrThrow(BUTTON_ID);
-  button.disabled = true;
-  button.textContent = "Starting...";
+  const startButton = getElementOrThrow(START_BUTTON);
+  startButton.disabled = true;
+  startButton.textContent = "Starting...";
   setTextContent(EXPRESSION_ELEMENT_ID, "Expression: loading models...");
   try {
     await ensureFaceApiReady();
     const { stream } = await startCamera(VIDEO_ELEMENT_ID, CAMERA_CONSTRAINTS);
     state.stream = stream;
     state.running = true;
-    button.textContent = "Stop Liveness";
-    button.disabled = false;
+    resetExpressionProgress();
+    startButton.textContent = "Stop Liveness";
+    startButton.disabled = false;
     setTextContent(EXPRESSION_ELEMENT_ID, "Expression: searching for a face...");
     runDetectionLoop();
   } catch (error) {
     console.error("[expression-liveness] start error", error);
     setTextContent(EXPRESSION_ELEMENT_ID, `Expression: ${error.message}`);
-    button.textContent = "Start Liveness";
-    button.disabled = false;
+    startButton.textContent = "Start Liveness";
+    startButton.disabled = false;
     stopCamera(state.stream);
     state.stream = null;
   }
@@ -140,7 +227,7 @@ function stopDetection() {
   state.stream = null;
   cleanupVideoElement();
   setTextContent(EXPRESSION_ELEMENT_ID, "Expression: detection stopped.");
-  const button = document.getElementById(BUTTON_ID);
+  const button = document.getElementById(START_BUTTON);
   if (button) {
     button.textContent = "Start Liveness";
     button.disabled = false;
@@ -157,7 +244,8 @@ async function handleButtonClick(event) {
 }
 
 function boot() {
-  const button = getElementOrThrow(BUTTON_ID);
+  initExpressionElements();
+  const button = getElementOrThrow(START_BUTTON);
   button.addEventListener("click", handleButtonClick);
   setTextContent(EXPRESSION_ELEMENT_ID, "Expression: click start to begin detection.");
 }
