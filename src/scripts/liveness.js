@@ -124,6 +124,22 @@ function renderExpressionState(key) {
   }
   ui.checkbox.checked = entry.completed;
   ui.checkbox.disabled = entry.completed;
+  filterNotCompleted();
+}
+
+function filterNotCompleted() {
+  // check the ones that are not completed and show the closest to be completed
+  const nextExpression = EXPRESSIONS.find(({ key }) => {
+    const stats = state.expressionStats[key];
+    return stats && !stats.completed;
+  });
+
+  if (nextExpression) {
+    setTextContent("currentExpression", nextExpression.label);
+    return;
+  }
+
+  setTextContent("currentExpression", "Face expression verification completed.");
 }
 
 function renderAllExpressions() {
@@ -135,6 +151,9 @@ function resetExpressionProgress() {
   renderAllExpressions();
 }
 
+/*
+ * Update expression percent value.
+ */
 function trackExpressionDuration(label, deltaMs, score) {
   if (!label || score < EXPRESSION_CONFIDENCE_THRESHOLD) {
     return;
@@ -152,6 +171,9 @@ function trackExpressionDuration(label, deltaMs, score) {
   renderExpressionState(label);
 }
 
+/*
+ * Function to detect face expression
+ * */
 async function detectExpression() {
   console.log("detecting expression");
   const video = document.getElementById(VIDEO_ELEMENT_ID);
