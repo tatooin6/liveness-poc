@@ -23,11 +23,12 @@ This proof of concept demonstrates a browser-based identity verification flow th
   - [Face Comparison Workflows](#face-comparison-workflows)
     - [Manual Upload (`src/index.html`)](#manual-upload-srcindexhtml)
     - [Proof of Life contrasted with Identity document (`src/basic-liveness.html`)](#proof-of-life-contrasted-with-identity-document-srcbasic-livenesshtml)
-  - [Document Processing \& Liveness](#document-processing--liveness)
+    - [Facial Expressions Detection (`src/liveness.html`)](#facial-expressions-detection-srclivenesshtml)
+  - [Demos](#demos)
   - [Troubleshooting](#troubleshooting)
   - [Additional Notes](#additional-notes)
     - [To be added](#to-be-added)
-    - [⚠️ SECURITY WARNING:](#️-security-warning)
+    - [⚠️ SECURITY WARNING](#️-security-warning)
 
 ## Features
 
@@ -93,7 +94,10 @@ liveness-poc/
    ```bash
    npm run start:dev
    ```
-   This runs `npx http-server . -p 4173`. Open `http://localhost:4173/src/index.html` (manual comparison) or `http://localhost:4173/src/basic-liveness.html` for the live demo.
+   If default port was not modified open: 
+    - `http://localhost:4173/src/index.html` manual comparison.
+    - `http://localhost:4173/src/basic-liveness.html` for the live demo.
+    - `http://localhost:4173/src/liveness.html` for face expression recognition.
 4. **Browser requirements**
    - Modern Chromium/Firefox (must support ES modules).
    - Allow camera permissions for live flows.
@@ -105,8 +109,6 @@ If you modify the official FacePlugin sources inside `scripts/`, rebuild the bro
 ```bash
 npm run build:sdk
 ```
-
-The output (`dist/facerecognition-sdk.js`) should be loaded before the feature scripts; `index.html` already includes it via the FacePlugin npm package.
 
 ## Face Comparison Workflows
 
@@ -127,16 +129,29 @@ The output (`dist/facerecognition-sdk.js`) should be loaded before the feature s
    - Runs detection, landmarks, and descriptors using face-api.js.
    - Calculates Euclidean distance and updates the status message with pass/fail feedback.
 
-Both flows share the `face-api-service` to load models (with fallback between local weights and CDN) and compute descriptor distances.
+### Facial Expressions Detection (`src/liveness.html`)
 
-## Document Processing & Liveness
+1. Hold the expression shown in the right-hand panel for 5 seconds, or until the expression's progress bar is full, to mark it as complete.
+2. Continue with the next expression shown until all progress bars are full.
 
-- **Document analyzer (`document-processing.js`)**
-  - Uses FacePlugin detection + landmarks on uploaded document photos.
-  - Stores detection data and a PNG snapshot for downstream features.
-- **Live photo capture & liveness (`basic-liveness.html`)**
+> All flows share the `face-api-service` to load models (with fallback between local weights and CDN) and compute descriptor distances.
+
+## Demos
+
+- **Face Comparison Playground (`src/index.html`)**
+  - Upload two identity documents in image format that contain a face. face-api.js will detect the presence of faces in the images.
+  - Use face-api.js to compare two faces and check if they belong to the same person.
+
+- **Liveness & Live Photo Capture Comparison (`src/basic-liveness.html`)**
   - FacePlugin handles video capture, detection, and liveness inference.
-  - `comparison-state` keeps the latest captured frame for comparison.
+  - It performs face detection and creates a PNG snapshot for further processing.
+  - Upload an identity document that contains a face photograph, face-api.js will detect a face recognition on the uploaded file.
+  - A comparison is made between the captured face and the recognized face on the identity document to verify that it is the same person.
+
+- **Face Expression Detection (`src/liveness.html`)**
+  - The user is presented with a sequence of facial expression prompts.
+  - They must maintain the requested expression for a certain amount of time to verify their health.
+  - Once all requested expressions have been completed, the user's health is confirmed.
 
 These modules still rely on the FacePlugin SDK because they require OpenCV integration and other proprietary behaviors. They can be refactored to face-api.js in future iterations.
 
@@ -155,20 +170,18 @@ These modules still rely on the FacePlugin SDK because they require OpenCV integ
 - Styling lives in `src/styles/main.css` and is shared between demos.
 - Because the FacePlugin SDK and OpenCV assets are heavy, running the project via `http-server` is recommended to avoid CORS issues with file URLs.
 
-This README should serve as the single reference for onboarding, running, and extending the Liveness PoC. For deeper feature-specific logic, explore the files within `src/scripts/features/` and `src/scripts/services/`.
+This README should serve as the single reference for onboarding, running, and extending the Liveness PoC. **For deeper feature-specific logic, explore the files within `src/scripts/features/` and `src/scripts/services/`**.
 
 ### To be added
 
-- Progress bar for facial life detection in different directions.
 - Language selection implementation.
 - Dialogue detection. Check [whisper](https://github.com/openai/whisper).
 - Establish fallback for missing device permissions (webcam).
 - OCR (Optical Character Recognition) engine for the extraction of text from presented personal document.
-- [CD](https://ciudadaniadigital.bo/admin/home) integration for data verification.
 - Add Unit Tests.
 
 ---
-### ⚠️ SECURITY WARNING: 
+### ⚠️ SECURITY WARNING
 
 Proof of Concept (PoC) Code - Use At Your Own Risk
 

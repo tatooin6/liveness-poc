@@ -25,11 +25,12 @@ Esta prueba de concepto demuestra un flujo de verificación de identidad basado 
   - [Flujos de Trabajo de Comparación Facial](#flujos-de-trabajo-de-comparación-facial)
     - [Carga manual (`src/index.html`)](#carga-manual-srcindexhtml)
     - [Prueba de Vida contrastado con documento de Identidad (`src/basic-liveness.html`)](#prueba-de-vida-contrastado-con-documento-de-identidad-srcbasic-livenesshtml)
-  - [Procesamiento de documentos y vitalidad](#procesamiento-de-documentos-y-vitalidad)
+    - [Detección de Expresiones Faciales (`src/liveness.html`)](#detección-de-expresiones-faciales-srclivenesshtml)
+  - [Demos](#demos)
   - [Solución de problemas](#solución-de-problemas)
   - [Notas adicionales](#notas-adicionales)
     - [Por Agregar](#por-agregar)
-    - [⚠️ ADVERTENCIA DE SEGURIDAD:](#️-advertencia-de-seguridad)
+    - [⚠️ ADVERTENCIA DE SEGURIDAD](#️-advertencia-de-seguridad)
 
 ## Características
 
@@ -98,10 +99,13 @@ liveness-poc/
     ```bash
     npm run start:dev
     ```
-Esto ejecuta `npx http-server . -p 4173`. Abra `http://localhost:4173/src/index.html` (comparación manual) o `http://localhost:4173/src/basic-liveness.html` para la demostración en vivo.
+    Si no se modificó el puerto predeterminado, abra:
+      - `http://localhost:4173/src/index.html` para realizar comparación manual.
+      - `http://localhost:4173/src/basic-liveness.html` para la demostración en vivo.
+      - `http://localhost:4173/src/liveness.html` para el reconocimiento de expresiones faciales.
 4. **Requisitos del navegador**
-- Chromium/Firefox moderno (debe ser compatible con los módulos ES).
-- Permitir permisos de cámara para transmisiones en vivo.
+   - Chromium/Firefox moderno (debe ser compatible con los módulos ES).
+   - Permitir permisos de cámara para transmisiones en vivo.
 
 ## Opcional: Reconstruir el SDK de FacePlugin
 
@@ -110,9 +114,6 @@ Si se modifica el código fuente oficial de FacePlugin dentro de `scripts/`, se 
 ```bash
 npm run build:sdk
 ```
-
-La salida (`dist/facerecognition-sdk.js`) debe cargarse antes que los scripts de características; `index.html` ya la incluye a través del paquete npm de FacePlugin.
-
 
 ## Flujos de Trabajo de Comparación Facial
 
@@ -133,16 +134,27 @@ La salida (`dist/facerecognition-sdk.js`) debe cargarse antes que los scripts de
    - Se ejecuta la detección, los puntos de referencia y los descriptores con face-api.js.
    - Se calcula la distancia euclidiana y se actualiza el mensaje de estado con la respuesta de aprobado/reprobado.
 
-Ambos flujos comparten el servicio `face-api-service` para cargar modelos (con respaldo entre ponderaciones locales y CDN) y calcular las distancias de los descriptores.
+### Detección de Expresiones Faciales (`src/liveness.html`)
 
-## Procesamiento de documentos y vitalidad
+1. Mantenga la expresión indicada en el panel de la derecha durante 5 segundos o hasta que se complete la barra de progreso de la expresión para marcarla como completada.
+2. Continue con la siguiente expresión indicada hasta completar todas las barras de progreso.
 
-- **Analizador de documentos (`document-processing.js`)**
-  - Utiliza la detección de FacePlugin y puntos de referencia en las fotos de los documentos cargados.
-  - Almacena los datos de detección y un documento de PNG para las características posteriores.
-- **Captura de fotos en vivo y vitalidad (`basic-liveness.html`)**
-  - FacePlugin gestiona la captura de vídeo, la detección y la inferencia de vitalidad.
-  - `comparison-state` conserva el último fotograma capturado para su comparación.
+Todos los flujos comparten el servicio `face-api-service` para cargar modelos (con respaldo entre ponderaciones locales y CDN) y calcular las distancias de los descriptores.
+
+## Demos
+
+- **Face Comparison Playground (`/src/index.html`)**
+  - Sube dos documentos de identidad en formato de imagen que contengan un rostro face-api.js va a detectar la presencia de rostros en las imágenes.
+  - Utiliza face-api.js para comparar dos rostros y comprobar si pertenecen a la misma persona.
+- **Liveness & Live Photo Capture Comparison (`/src/basic-liveness.html`)**
+  - FacePlugin gestiona la captura de vídeo, la detección y la inferencia de vida.
+  - Realiza la detección facial y crea una instantánea PNG para su posterior procesamiento.
+  - Sube un documento de identidad que contenga una fotografía facial; face-api.js detectará el reconocimiento facial en el archivo subido.
+  - Se realiza una comparación entre el rostro capturado y el rostro reconocido en el documento de identidad para verificar que se trata de la misma persona.
+- **Face Expression Detection (`/src/liveness.html`)**
+  - Se presenta al usuario una secuencia de indicaciones de expresión facial.
+  - Deben mantener la expresión solicitada durante un tiempo determinado para verificar su estado de salud.
+  - Una vez completadas todas las expresiones solicitadas, se confirma el estado de salud del usuario.
 
 Estos módulos aún dependen del SDK de FacePlugin porque requieren la integración con OpenCV y otros comportamientos propietarios. Se pueden refactorizar a face-api.js en futuras iteraciones.
 
@@ -162,20 +174,18 @@ Estos módulos aún dependen del SDK de FacePlugin porque requieren la integraci
 - Los estilos se encuentran en `src/styles/main.css` y se comparten entre las demostraciones.
 - Dado que el SDK de FacePlugin y los recursos de OpenCV son pesados, se recomienda ejecutar el proyecto mediante `http-server` para evitar problemas de CORS con las URL de los archivos.
 
-Este archivo README debe servir como referencia única para la integración, ejecución y extensión de la PoC de Liveness. Para una lógica más detallada de las características, explore los archivos `src/scripts/features/` y `src/scripts/services/`.
+Este archivo README debe servir como referencia única para la integración, ejecución y extensión de la PoC de Liveness. **Para una lógica más detallada de las características, explore los archivos `src/scripts/features/` y `src/scripts/services/`**.
 
 ### Por Agregar
 
-- Barra de progreso para la detección de vida facial en diferentes direcciones.
 - Implementación de seleccion de idiomas.
 - Detección de dialogo. Revisar [whisper](https://github.com/openai/whisper).
 - Establecer un respaldo para los permisos faltantes del dispositivo (cámara web).
 - Motor OCR (Reconocimiento óptico de caracteres) para la extracción de texto de un documento personal presentado.
-- Integración [CD](https://ciudadaniadigital.bo/admin/home) para verificación de datos.
 - Agregar pruebas unitarias.
 
 ---
-### ⚠️ ADVERTENCIA DE SEGURIDAD:
+### ⚠️ ADVERTENCIA DE SEGURIDAD
 
 Código de prueba de concepto (PoC): úselo bajo su propio riesgo
 
