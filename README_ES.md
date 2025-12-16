@@ -42,7 +42,6 @@ Esta prueba de concepto demuestra un flujo de verificación de identidad basado 
 
 ## Stack Tecnológico
 
-
 - **Entorno de Ejecución (runtime):** Node.js (scripts), navegadores modernos (app)
 - **Lenguajes de Programación:** Vanilla JavaScript (módulos ES), HTML5, CSS3
 - **Inferencia del Modelo:** face-api.js (detección facial, puntos de referencia, descriptores) y FacePlugin (SDK existente utilizado por otros flujos)
@@ -124,6 +123,8 @@ npm run build:sdk
 3. Una vez que ambos descriptores estén disponibles, haga clic en **Comparar rostros**.
 4. `manual-face-comparison.js` calcula la distancia euclidiana y muestra el veredicto (`threshold = 0.6`).
 
+![Comparación facial manual Playground](./public/img/face_comparison_playground.png)
+
 ### Prueba de Vida contrastado con documento de Identidad (`src/basic-liveness.html`)
 
 1. Analice un documento en el panel de procesamiento de documentos (página basic-liveness). Esto almacena una instantánea en `comparison-state`.
@@ -134,10 +135,21 @@ npm run build:sdk
    - Se ejecuta la detección, los puntos de referencia y los descriptores con face-api.js.
    - Se calcula la distancia euclidiana y se actualiza el mensaje de estado con la respuesta de aprobado/reprobado.
 
+**Detección de vida**
+
+![Detección de vida](./public/img/liveness_and_live_photo_capture_comparison.png)
+
+**Comparación de rostro con documento de identidad**
+
+![Comparación de rostro con documento de identidad](./public/img/liveness_and_live_photo_capture_comparison_2.png)
+
+
 ### Detección de Expresiones Faciales (`src/liveness.html`)
 
 1. Mantenga la expresión indicada en el panel de la derecha durante 5 segundos o hasta que se complete la barra de progreso de la expresión para marcarla como completada.
 2. Continue con la siguiente expresión indicada hasta completar todas las barras de progreso.
+
+![Expresión facial](./public/img/face_expression_detection.png)
 
 Todos los flujos comparten el servicio `face-api-service` para cargar modelos (con respaldo entre ponderaciones locales y CDN) y calcular las distancias de los descriptores.
 

@@ -119,6 +119,8 @@ npm run build:sdk
 3. Once both descriptors are available, click **Compare Faces**.
 4. `manual-face-comparison.js` computes Euclidean distance and displays the verdict (`threshold = 0.6`).
 
+![Face Comparison Playground](./public/img/face_comparison_playground.png)
+
 ### Proof of Life contrasted with Identity document (`src/basic-liveness.html`)
 
 1. Analyze a document in the document-processing panel (basic-liveness page). This stores a snapshot in `comparison-state`.
@@ -129,10 +131,20 @@ npm run build:sdk
    - Runs detection, landmarks, and descriptors using face-api.js.
    - Calculates Euclidean distance and updates the status message with pass/fail feedback.
 
+**Liveness Detection**
+
+![Liveness Detection](./public/img/liveness_and_live_photo_capture_comparison.png)
+
+**Comparison of faces with identity document**
+
+![Comparison of faces with identity document](./public/img/liveness_and_live_photo_capture_comparison_2.png)
+
 ### Facial Expressions Detection (`src/liveness.html`)
 
 1. Hold the expression shown in the right-hand panel for 5 seconds, or until the expression's progress bar is full, to mark it as complete.
 2. Continue with the next expression shown until all progress bars are full.
+
+![Facial Expressions](./public/img/face_expression_detection.png)
 
 > All flows share the `face-api-service` to load models (with fallback between local weights and CDN) and compute descriptor distances.
 
