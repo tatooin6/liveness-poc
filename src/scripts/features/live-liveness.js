@@ -97,10 +97,22 @@ export function createLiveLivenessController() {
     inferenceLoop();
   }
 
+  function clearCanvas() {
+    const canvas = document.getElementById(LIVENESS_CONFIG.canvasElementId);
+    if (!canvas) {
+      return;
+    }
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+
   function stop() {
     state.running = false;
     stopCamera(state.stream);
     state.stream = null;
+    clearCanvas();
     status.update("Liveness demo stopped.");
   }
 

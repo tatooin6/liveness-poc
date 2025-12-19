@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Face Expression Detection</title>
+    <link rel="stylesheet" href="./styles/main.css" />
+  </head>
+  <body>
+    <main class="demo-container">
+      <div class="grid">
+        <h1>Face Expression Detection (Demo)</h1>
+        <div class="control-buttons">
+          <button id="start-liveness" type="button">Start Liveness</button>
+        </div>
+        <p id="expression-status" class="status muted">Expression: click start to begin detection.</p>
+      </div>
+      <div class="grid">
+        <section>
+          <video id="live-video" width="640" height="480" autoplay muted playsinline></video>
+        </section>
+        <section class="panel">
+          <h3>Expression Checklist</h2>
+          <p>Hold a <strong id="currentExpression">happy</strong> expression for 5 seconds to mark it as completed.</p>
+          <ul class="expression-list">
+            <li class="expression-item">
+              <div class="expression-control">
+                <input type="checkbox" id="expr-happy-checkbox" />
+                <label for="expr-happy-checkbox">Happy</label>
+              </div>
+              <div class="expression-progress">
+                <progress id="expr-happy-progress" max="100" value="0"></progress>
+                <span id="expr-happy-percent" class="progress-value">0%</span>
+              </div>
+            </li>
+            <li class="expression-item">
+              <div class="expression-control">
+                <input type="checkbox" id="expr-sad-checkbox" />
+                <label for="expr-sad-checkbox">Sad</label>
+              </div>
+              <div class="expression-progress">
+                <progress id="expr-sad-progress" max="100" value="0"></progress>
+                <span id="expr-sad-percent" class="progress-value">0%</span>
+              </div>
+            </li>
+            <li class="expression-item">
+              <div class="expression-control">
+                <input type="checkbox" id="expr-angry-checkbox" />
+                <label for="expr-angry-checkbox">Angry</label>
+              </div>
+              <div class="expression-progress">
+                <progress id="expr-angry-progress" max="100" value="0"></progress>
+                <span id="expr-angry-percent" class="progress-value">0%</span>
+              </div>
+            </li>
+            <li class="expression-item">
+              <div class="expression-control">
+                <input type="checkbox" id="expr-fearful-checkbox" />
+                <label for="expr-fearful-checkbox">Fearful</label>
+              </div>
+              <div class="expression-progress">
+                <progress id="expr-fearful-progress" max="100" value="0"></progress>
+                <span id="expr-fearful-percent" class="progress-value">0%</span>
+              </div>
+            </li>
+            <li class="expression-item">
+              <div class="expression-control">
+                <input type="checkbox" id="expr-disgusted-checkbox" />
+                <label for="expr-disgusted-checkbox">Disgusted</label>
+              </div>
+              <div class="expression-progress">
+                <progress id="expr-disgusted-progress" max="100" value="0"></progress>
+                <span id="expr-disgusted-percent" class="progress-value">0%</span>
+              </div>
+            </li>
+            <li class="expression-item">
+              <div class="expression-control">
+                <input type="checkbox" id="expr-surprised-checkbox" />
+                <label for="expr-surprised-checkbox">Surprised</label>
+              </div>
+              <div class="expression-progress">
+                <progress id="expr-surprised-progress" max="100" value="0"></progress>
+                <span id="expr-surprised-percent" class="progress-value">0%</span>
+              </div>
+            </li>
+          </ul>
+        </section>
+      </div>
+    </main>
+    <script src="../node_modules/face-api.js/dist/face-api.min.js"></script>
+    <script src="./scripts/liveness.js" type="module"></script>
+  </body>
+</html>
