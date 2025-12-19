@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FacePlugin Liveness Demo</title>
+  <title>Liveness & Live Photo Capture Comparison</title>
    <link rel="stylesheet" href="./styles/main.css">
 </head>
 <body>
   <main class="demo-container">
-    <h1>Face Verification (Demo)</h1>
+    <h1>Liveness & Live Photo Capture Comparison (Demo)</h1>
     <p>
       This PoC hosts a set of vertical slices (document intake, liveness, comparison, inset tooling) built on top of
       <strong>faceplugin-face-recognition-js</strong>.
@@ -21,8 +21,9 @@
       </header>
       <div class="controls">
         <div class="control-buttons">
-          <button id="start-liveness" onclick="startLivenessFromButton(event)">Start Liveness Detection</button>
-          <button id="capture" type="button">Capture</button>
+          <button id="start-liveness" type="button" onclick="startLivenessFromButton(event)">Start</button>
+          <button id="stop-liveness" type="button" onclick="stopLivenessFromButton()" disabled>Stop</button>
+          <button id="capture" type="button" disabled>Capture</button>
         </div>
         <div id="live-status" class="status">Click start to begin. Click Capture to take a picture.</div>
       </div>

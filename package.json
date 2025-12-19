@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build:sdk": "node scripts/build-faceplugin-sdk.js",
+    "build:sdk": "node scripts/build-faceplugin-sdk.cjs",
     "start:dev": "npx http-server . -p 4173"
   },
   "keywords": [
