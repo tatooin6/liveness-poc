@@ -1,4 +1,7 @@
+import { initI18n } from "./i18n.js";
 import { registerManualFaceComparisonTest } from "./features/manual-face-comparison.js";
+
+initI18n({ pageKey: "index", controlId: "lang-select" });
 
 try {
   registerManualFaceComparisonTest({

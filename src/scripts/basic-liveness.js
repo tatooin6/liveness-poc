@@ -1,8 +1,11 @@
 import { FEATURE_FLAGS } from "./config/app-config.js";
+import { initI18n } from "./i18n.js";
 import { createLiveLivenessController } from "./features/live-liveness.js";
 import { registerDocumentUploadFeature } from "./features/document-processing.js";
 import { registerFaceComparisonFeature } from "./features/face-comparison.js";
 import { registerLivePhotoCapture } from "./features/live-photo-capture.js";
+
+initI18n({ pageKey: "basic", controlId: "lang-select" });
 
 const controller = createLiveLivenessController();
 let startButtonRef = null;

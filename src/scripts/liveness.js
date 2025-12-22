@@ -1,7 +1,10 @@
 import { CAMERA_CONSTRAINTS } from "./config/app-config.js";
+import { initI18n } from "./i18n.js";
 import { startCamera, stopCamera } from "./services/camera-service.js";
 import { ensureFaceApiReady } from "./services/face-api-service.js";
 import { getElementOrThrow, setTextContent } from "./services/dom-utils.js";
+
+initI18n({ pageKey: "expressions", controlId: "lang-select" });
 
 const VIDEO_ELEMENT_ID = "live-video";
 const START_BUTTON = "start-liveness";

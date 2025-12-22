@@ -8,29 +8,36 @@
   </head>
   <body>
     <main id="app" class="demo-container">
+      <label class="lang-toggle" for="lang-select">
+        <span class="sr-only">Language</span>
+        <select id="lang-select">
+          <option value="es" selected>Español</option>
+          <option value="en">English</option>
+        </select>
+      </label>
       <header>
-        <h1>Face Comparison Playground</h1>
-        <p class="tip">
+        <h1 id="title-main">Face Comparison Playground</h1>
+        <p id="subtitle-main" class="tip">
           Upload two portraits to run detection, landmarks, feature extraction, and match results through face-api.js.
         </p>
       </header>
 
       <section class="panel">
-        <h2>1. Upload the photos you want to compare</h2>
+        <h2 id="section-upload-title">1. Upload the photos you want to compare</h2>
         <div class="grid">
           <div class="panel">
-            <h3>Image A</h3>
+            <h3 id="image-a-title">Image A</h3>
             <label class="upload-control">
-              <span>Select an image</span>
+              <span id="select-image-a">Select an image</span>
               <input id="referenceUpload" type="file" accept="image/*" />
             </label>
             <canvas id="referenceCanvas"></canvas>
             <p id="referenceStatus" class="status muted">Waiting for upload…</p>
           </div>
           <div class="panel">
-            <h3>Image B</h3>
+            <h3 id="image-b-title">Image B</h3>
             <label class="upload-control">
-              <span>Select an image</span>
+              <span id="select-image-b">Select an image</span>
               <input id="comparisonUpload" type="file" accept="image/*" />
             </label>
             <canvas id="comparisonCanvas"></canvas>
